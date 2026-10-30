@@ -1,0 +1,36 @@
+import '../models/models.dart';
+
+class PricingEngine {
+  /// Dynamic calculation based on size multipliers, material finish, and bulk tier discounts
+  static double calculatePrice({
+    required Product product,
+    required String selectedSize,
+    required ProductOption selectedPaper,
+    required ProductOption selectedFinish,
+    required int quantity,
+  }) {
+    double sizeMultiplier = 1.0;
+    if (selectedSize.contains('A3') || selectedSize.contains('Large') || selectedSize.contains('12x18')) {
+      sizeMultiplier = 1.8;
+    } else if (selectedSize.contains('Banner') || selectedSize.contains('Flex')) {
+      sizeMultiplier = 2.5;
+    }
+
+    double unitBase = (product.basePrice * sizeMultiplier) +
+        selectedPaper.extraPricePerUnit +
+        selectedFinish.extraPricePerUnit;
+
+    // Bulk tier discount calculation
+    double discountPercentage = 0.0;
+    if (quantity >= 1000) {
+      discountPercentage = 0.25; // 25% off bulk
+    } else if (quantity >= 500) {
+      discountPercentage = 0.18; // 18% off
+    } else if (quantity >= 100) {
+      discountPercentage = 0.10; // 10% off
+    }
+
+    double total = (unitBase * quantity) * (1.0 - discountPercentage);
+    return double.parse(total.toStringAsFixed(2));
+  }
+}

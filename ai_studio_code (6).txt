@@ -1,0 +1,105 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'providers/app_state.dart';
+import 'screens/home_screen.dart';
+
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AppState()),
+      ],
+      child: const ChandraPrintersApp(),
+    ),
+  );
+}
+
+class ChandraPrintersApp extends StatelessWidget {
+  const ChandraPrintersApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'CHANDRA PRINTERS',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF0D0D0D),
+        primaryColor: const Color(0xFFD4AF37), // Luxurious Gold
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFFD4AF37), // Gold
+          secondary: Color(0xFFC62828), // Deep Red
+          surface: Color(0xFF1A1A1A),
+        ),
+        textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF141414),
+          elevation: 2,
+          iconTheme: IconThemeData(color: Color(0xFFD4AF37)),
+          titleTextStyle: TextStyle(
+            color: Color(0xFFD4AF37),
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.1,
+          ),
+        ),
+      ),
+      home: const MainNavigationShell(),
+    );
+  }
+}
+
+class MainNavigationShell extends StatefulWidget {
+  const MainNavigationShell({super.key});
+
+  @override
+  State<MainNavigationShell> createState() => _MainNavigationShellState();
+}
+
+class _MainNavigationShellState extends State<MainNavigationShell> {
+  int _currentIndex = 0;
+
+  final List<Widget> _screens = [
+    const HomeScreen(),
+    const CartScreenWrapper(),
+    const OrderTrackingScreenWrapper(),
+    const ContactSupportScreenWrapper(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final cartCount = context.watch<AppState>().cart.length;
+
+    return Scaffold(
+      body: _screens[_currentIndex],
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: Color(0x33D4AF37), width: 1)),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          backgroundColor: const Color(0xFF141414),
+          selectedItemColor: const Color(0xFFD4AF37),
+          unselectedItemColor: Colors.grey,
+          type: BottomNavigationBarType.fixed,
+          onTap: (index) => setState(() => _currentIndex = index),
+          items: [
+            const BottomNavigationBarItem(icon: Icon(Icons.print_rounded), label: "Catalog"),
+            BottomNavigationBarItem(
+              icon: Badge(
+                label: Text('$cartCount'),
+                isLabelVisible: cartCount > 0,
+                child: const Icon(Icons.shopping_bag_outlined),
+              ),
+              label: "Cart",
+            ),
+            const BottomNavigationBarItem(icon: Icon(Icons.local_shipping_outlined), label: "Track"),
+            const BottomNavigationBarItem(icon: Icon(Icons.support_agent_rounded), label: "Contact"),
+          ],
+        ),
+      ),
+    );
+  }
+}

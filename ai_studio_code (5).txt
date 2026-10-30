@@ -1,0 +1,189 @@
+import 'package:flutter/material.dart';
+import '../models/models.dart';
+
+class AppState extends ChangeNotifier {
+  // Active catalog
+  List<Product> _products = [
+    Product(
+      id: "cp-1",
+      name: "Luxury Executive Diary",
+      category: "Diaries and Notebooks",
+      description: "Gold embossed leatherette diaries with personalized name engraving.",
+      basePrice: 220.0,
+      minQuantity: 25,
+      availableSizes: ["A5 Regular", "B5 Executive"],
+      paperOptions: [
+        ProductOption(name: "80 GSM Natural Shade", extraPricePerUnit: 0),
+        ProductOption(name: "100 GSM Bond Paper", extraPricePerUnit: 35),
+      ],
+      finishOptions: [
+        ProductOption(name: "Gold Foil Stamping", extraPricePerUnit: 20),
+        ProductOption(name: "UV Debossing", extraPricePerUnit: 30),
+      ],
+      imageUrl: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600",
+    ),
+    Product(
+      id: "cp-2",
+      name: "Customized Wall Calendars 2026-27",
+      category: "Wall Calendars",
+      description: "High quality full-color wall calendars with metallic rim binding.",
+      basePrice: 45.0,
+      minQuantity: 100,
+      availableSizes: ["11x18 inch", "14x22 inch Jumbo"],
+      paperOptions: [
+        ProductOption(name: "130 GSM Art Paper", extraPricePerUnit: 0),
+        ProductOption(name: "170 GSM Gloss Art", extraPricePerUnit: 12),
+      ],
+      finishOptions: [
+        ProductOption(name: "Top Tinning Rim", extraPricePerUnit: 5),
+        ProductOption(name: "Full Spiral Ring", extraPricePerUnit: 15),
+      ],
+      imageUrl: "https://images.unsplash.com/photo-1506784365847-bbad939e9335?w=600",
+    ),
+    Product(
+      id: "cp-3",
+      name: "Premium Royal Wedding Invitation",
+      category: "Wedding Cards",
+      description: "Traditional & modern invitation sets with laser-cut velvet cardstock.",
+      basePrice: 65.0,
+      minQuantity: 100,
+      availableSizes: ["7x9 Royal Folder", "Trifold Box Boxed"],
+      paperOptions: [
+        ProductOption(name: "300 GSM Metallic Board", extraPricePerUnit: 0),
+        ProductOption(name: "Handmade Velvet Sheet", extraPricePerUnit: 40),
+      ],
+      finishOptions: [
+        ProductOption(name: "Golden Foil Emboss", extraPricePerUnit: 15),
+        ProductOption(name: "Acrylic Name Plate", extraPricePerUnit: 50),
+      ],
+      imageUrl: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=600",
+    ),
+    Product(
+      id: "cp-4",
+      name: "High Definition Outdoor Flex Banner",
+      category: "Banners and Flex Printing",
+      description: "Weather-resistant, star quality frontlit & backlit flex banners.",
+      basePrice: 18.0,
+      minQuantity: 20,
+      availableSizes: ["6x4 ft", "10x5 ft", "20x10 ft Mega"],
+      paperOptions: [
+        ProductOption(name: "280 GSM Normal Flex", extraPricePerUnit: 0),
+        ProductOption(name: "340 GSM Star Quality", extraPricePerUnit: 10),
+      ],
+      finishOptions: [
+        ProductOption(name: "Eyelets & Hemming", extraPricePerUnit: 2),
+        ProductOption(name: "Heavy Iron Framing Support", extraPricePerUnit: 45),
+      ],
+      imageUrl: "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=600",
+    ),
+    Product(
+      id: "cp-5",
+      name: "Corporate Visiting Cards (Matte/Gloss)",
+      category: "Visiting Cards",
+      description: "High impact business cards printed on premium Italian board.",
+      basePrice: 1.5,
+      minQuantity: 500,
+      availableSizes: ["3.5 x 2.0 Standard"],
+      paperOptions: [
+        ProductOption(name: "350 GSM Ivory Board", extraPricePerUnit: 0),
+        ProductOption(name: "400 GSM Velvet Touch Board", extraPricePerUnit: 0.8),
+      ],
+      finishOptions: [
+        ProductOption(name: "Thermal Matte Lamination", extraPricePerUnit: 0.2),
+        ProductOption(name: "Spot UV + Gold Foiling", extraPricePerUnit: 1.2),
+      ],
+      imageUrl: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600",
+    ),
+  ];
+
+  final List<CartItem> _cart = [];
+  final List<CustomerOrder> _orders = [];
+
+  List<Product> get products => _products;
+  List<CartItem> get cart => _cart;
+  List<CustomerOrder> get orders => _orders;
+
+  double get cartGrandTotal => _cart.fold(0.0, (sum, item) => sum + item.calculatedTotal);
+
+  void addToCart(CartItem item) {
+    _cart.add(item);
+    notifyListeners();
+  }
+
+  void removeFromCart(int index) {
+    _cart.removeAt(index);
+    notifyListeners();
+  }
+
+  void clearCart() {
+    _cart.clear();
+    notifyListeners();
+  }
+
+  CustomerOrder placeOrder({
+    required String name,
+    required String phone,
+    required String address,
+    required String paymentMethod,
+    required bool isPaid,
+  }) {
+    final order = CustomerOrder(
+      orderId: "CP-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}",
+      customerName: name,
+      customerPhone: phone,
+      deliveryAddress: address,
+      items: List.from(_cart),
+      totalAmount: cartGrandTotal,
+      paymentMethod: paymentMethod,
+      isPaid: isPaid,
+      status: OrderStatus.orderReceived,
+      createdAt: DateTime.now(),
+    );
+
+    _orders.insert(0, order);
+    clearCart();
+    notifyListeners();
+    return order;
+  }
+
+  // Admin controls
+  void updateOrderStatus(String orderId, OrderStatus newStatus) {
+    int index = _orders.indexWhere((o) => o.orderId == orderId);
+    if (index != -1) {
+      var old = _orders[index];
+      _orders[index] = CustomerOrder(
+        orderId: old.orderId,
+        customerName: old.customerName,
+        customerPhone: old.customerPhone,
+        deliveryAddress: old.deliveryAddress,
+        items: old.items,
+        totalAmount: old.totalAmount,
+        paymentMethod: old.paymentMethod,
+        isPaid: old.isPaid,
+        status: newStatus,
+        createdAt: old.createdAt,
+      );
+      notifyListeners();
+    }
+  }
+
+  void updateProductPrice(String productId, double newBasePrice) {
+    int index = _products.indexWhere((p) => p.id == productId);
+    if (index != -1) {
+      var p = _products[index];
+      _products[index] = Product(
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        description: p.description,
+        basePrice: newBasePrice,
+        minQuantity: p.minQuantity,
+        availableSizes: p.availableSizes,
+        paperOptions: p.paperOptions,
+        finishOptions: p.finishOptions,
+        imageUrl: p.imageUrl,
+      );
+      notifyListeners();
+    }
+  }
+}

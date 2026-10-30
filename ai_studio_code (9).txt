@@ -1,0 +1,254 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../providers/app_state.dart';
+
+class CartScreenWrapper extends StatefulWidget {
+  const CartScreenWrapper({super.key});
+
+  @override
+  State<CartScreenWrapper> createState() => _CartScreenWrapperState();
+}
+
+class _CartScreenWrapperState extends State<CartScreenWrapper> {
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _addressController = TextEditingController();
+  String _selectedPaymentMethod = "UPI Payment (GPay/PhonePe/Paytm)";
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+    final cart = state.cart;
+
+    if (cart.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: const Text("Your Cart")),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Icon(Icons.remove_shopping_cart_outlined, size: 70, color: Colors.grey),
+              SizedBox(height: 14),
+              Text("Your cart is empty", style: TextStyle(fontSize: 18, color: Colors.white70)),
+              SizedBox(height: 6),
+              Text("Select printing items from the catalog", style: TextStyle(color: Colors.grey)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Chandra Printers Cart"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_sweep_outlined),
+            onPressed: () => state.clearCart(),
+          )
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // List of items
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: cart.length,
+              itemBuilder: (ctx, i) {
+                final item = cart[i];
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1B1B1B),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0x33D4AF37)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(item.product.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                            const SizedBox(height: 2),
+                            Text("Size: ${item.selectedSize} | Qty: ${item.quantity}",
+                                style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                            Text("Stock: ${item.selectedPaper.name}",
+                                style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                            if (item.uploadedFileName != null)
+                              Text("Artwork: ${item.uploadedFileName}",
+                                  style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 11)),
+                            const SizedBox(height: 4),
+                            Text("Subtotal: ₹${item.calculatedTotal}",
+                                style: const TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.redAccent),
+                        onPressed: () => state.removeFromCart(i),
+                      )
+                    ],
+                  ),
+                );
+              },
+            ),
+
+            const Divider(color: Colors.white24, height: 30),
+
+            // Customer details
+            const Text("Customer & Delivery Details",
+                style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD4AF37), fontSize: 16)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _nameController,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: "Full Name",
+                labelStyle: TextStyle(color: Colors.white70),
+                filled: true,
+                fillColor: Color(0xFF1E1E1E),
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: "Mobile Number (WhatsApp Preferred)",
+                labelStyle: TextStyle(color: Colors.white70),
+                filled: true,
+                fillColor: Color(0xFF1E1E1E),
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _addressController,
+              maxLines: 2,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: "Delivery Address in Kanpur (or 'Store Pickup')",
+                labelStyle: TextStyle(color: Colors.white70),
+                filled: true,
+                fillColor: Color(0xFF1E1E1E),
+                border: OutlineInputBorder(),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Payment Options
+            const Text("Payment Method", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD4AF37), fontSize: 16)),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              value: _selectedPaymentMethod,
+              dropdownColor: const Color(0xFF222222),
+              decoration: const InputDecoration(
+                filled: true,
+                fillColor: Color(0xFF1E1E1E),
+                border: OutlineInputBorder(),
+              ),
+              items: const [
+                DropdownMenuItem(value: "UPI Payment (GPay/PhonePe/Paytm)", child: Text("UPI Instant (9415130945@upi)")),
+                DropdownMenuItem(value: "Cash on Delivery / Pay at Shop", child: Text("Pay at Kanpur Counter / Cash")),
+              ],
+              onChanged: (val) => setState(() => _selectedPaymentMethod = val!),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Final Order Bill
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF141414),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFD4AF37)),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Grand Total Payable:", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text("₹${state.cartGrandTotal.toStringAsFixed(2)}",
+                          style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 20, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFC62828),
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () => _executeOrder(context, state),
+                      child: const Text("CONFIRM & PLACE PRINT ORDER", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    ),
+                  )
+                ],
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _executeOrder(BuildContext context, AppState state) {
+    if (_nameController.text.trim().isEmpty || _phoneController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill in customer name and mobile number.")),
+      );
+      return;
+    }
+
+    final order = state.placeOrder(
+      name: _nameController.text.trim(),
+      phone: _phoneController.text.trim(),
+      address: _addressController.text.trim().isEmpty ? "Store Pickup (Jawahar Nagar, Kanpur)" : _addressController.text.trim(),
+      paymentMethod: _selectedPaymentMethod,
+      isPaid: false,
+    );
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1B1B1B),
+        title: const Text("Order Placed Successfully!", style: TextStyle(color: Color(0xFFD4AF37))),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Order Number: ${order.orderId}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            const Text("Your order has been forwarded to Dheeraj Shukla at CHANDRA PRINTERS.", style: TextStyle(color: Colors.white70)),
+            const SizedBox(height: 12),
+            const Text("UPI Payment ID: 9415130945@upi", style: TextStyle(color: Color(0xFFD4AF37), fontSize: 13)),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD4AF37), foregroundColor: Colors.black),
+            onPressed: () {
+              Navigator.pop(ctx);
+            },
+            child: const Text("Done"),
+          )
+        ],
+      ),
+    );
+  }
+}

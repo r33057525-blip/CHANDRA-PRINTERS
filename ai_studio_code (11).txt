@@ -1,0 +1,132 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_state.dart';
+import '../models/models.dart';
+
+class AdminDashboardScreen extends StatelessWidget {
+  const AdminDashboardScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("Chandra Admin Portal"),
+          bottom: const TabBar(
+            indicatorColor: Color(0xFFD4AF37),
+            tabs: [
+              Tab(text: "Live Orders", icon: Icon(Icons.receipt_long)),
+              Tab(text: "Price Manager", icon: Icon(Icons.currency_rupee)),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            // Order Management View
+            state.orders.isEmpty
+                ? const Center(child: Text("No customer orders recorded yet.", style: TextStyle(color: Colors.grey)))
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: state.orders.length,
+                    itemBuilder: (ctx, i) {
+                      final order = state.orders[i];
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 14),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1B1B1B),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0x33D4AF37)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("${order.orderId} - ₹${order.totalAmount}",
+                                style: const TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold, fontSize: 16)),
+                            Text("Client: ${order.customerName} | ${order.customerPhone}",
+                                style: const TextStyle(color: Colors.white70)),
+                            const SizedBox(height: 10),
+                            const Text("Update Manufacturing Stage:",
+                                style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 6),
+                            DropdownButton<OrderStatus>(
+                              value: order.status,
+                              isExpanded: true,
+                              dropdownColor: const Color(0xFF222222),
+                              items: OrderStatus.values.map((s) {
+                                return DropdownMenuItem(value: s, child: Text(s.label, style: const TextStyle(color: Colors.white)));
+                              }).toList(),
+                              onChanged: (newStatus) {
+                                if (newStatus != null) {
+                                  state.updateOrderStatus(order.orderId, newStatus);
+                                }
+                              },
+                            )
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+
+            // Live Catalog & Base Price Modifier
+            ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: state.products.length,
+              itemBuilder: (ctx, i) {
+                final prod = state.products[i];
+                final priceEditController = TextEditingController(text: prod.basePrice.toString());
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1B1B1B),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white12),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(prod.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            Text("Current Base Rate: ₹${prod.basePrice}", style: const TextStyle(color: Color(0xFFD4AF37))),
+                          ],
+                        ),
+                      ),
+                      SizedBox(
+                        width: 80,
+                        child: TextField(
+                          controller: priceEditController,
+                          keyboardType: TextInputType.number,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: const InputDecoration(labelText: "New ₹", isDense: true),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.save, color: Color(0xFFD4AF37)),
+                        onPressed: () {
+                          final double? parsed = double.tryParse(priceEditController.text);
+                          if (parsed != null) {
+                            state.updateProductPrice(prod.id, parsed);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Price updated for ${prod.name}")),
+                            );
+                          }
+                        },
+                      )
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

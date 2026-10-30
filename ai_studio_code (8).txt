@@ -1,0 +1,306 @@
+import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:provider/provider.dart';
+import '../models/models.dart';
+import '../providers/app_state.dart';
+import '../services/pricing_engine.dart';
+
+class ProductConfigScreen extends StatefulWidget {
+  final Product product;
+  const ProductConfigScreen({super.key, required this.product});
+
+  @override
+  State<ProductConfigScreen> createState() => _ProductConfigScreenState();
+}
+
+class _ProductConfigScreenState extends State<ProductConfigScreen> {
+  late String _selectedSize;
+  late ProductOption _selectedPaper;
+  late ProductOption _selectedFinish;
+  late int _quantity;
+  String? _uploadedFileName;
+  final TextEditingController _notesController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedSize = widget.product.availableSizes.first;
+    _selectedPaper = widget.product.paperOptions.first;
+    _selectedFinish = widget.product.finishOptions.first;
+    _quantity = widget.product.minQuantity;
+  }
+
+  double get currentCalculatedPrice {
+    return PricingEngine.calculatePrice(
+      product: widget.product,
+      selectedSize: _selectedSize,
+      selectedPaper: _selectedPaper,
+      selectedFinish: _selectedFinish,
+      quantity: _quantity,
+    );
+  }
+
+  Future<void> _pickArtworkFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'png', 'psd', 'cdr'],
+    );
+    if (result != null) {
+      setState(() {
+        _uploadedFileName = result.files.single.name;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Artwork Attached: $_uploadedFileName")),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.product.name)),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Specs Header Card
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E1E1E),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0x33D4AF37)),
+              ),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(widget.product.imageUrl, width: 70, height: 70, fit: BoxFit.cover),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(widget.product.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        const SizedBox(height: 4),
+                        Text("Min. Order: ${widget.product.minQuantity} units",
+                            style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 12)),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Select Dimension / Size
+            const Text("1. Select Size / Dimension", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: widget.product.availableSizes.map((size) {
+                final isSelected = _selectedSize == size;
+                return ChoiceChip(
+                  label: Text(size),
+                  selected: isSelected,
+                  selectedColor: const Color(0xFFD4AF37),
+                  backgroundColor: const Color(0xFF222222),
+                  labelStyle: TextStyle(color: isSelected ? Colors.black : Colors.white),
+                  onSelected: (val) => setState(() => _selectedSize = size),
+                );
+              }).toList(),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Paper & Material Options
+            const Text("2. Paper GSM & Material Quality", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<ProductOption>(
+              value: _selectedPaper,
+              dropdownColor: const Color(0xFF222222),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: const Color(0xFF1E1E1E),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              items: widget.product.paperOptions.map((opt) {
+                return DropdownMenuItem(
+                  value: opt,
+                  child: Text("${opt.name} (+₹${opt.extraPricePerUnit}/unit)", style: const TextStyle(color: Colors.white)),
+                );
+              }).toList(),
+              onChanged: (val) => setState(() => _selectedPaper = val!),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Coating & Finish Options
+            const Text("3. Lamination & Finishing", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<ProductOption>(
+              value: _selectedFinish,
+              dropdownColor: const Color(0xFF222222),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: const Color(0xFF1E1E1E),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              items: widget.product.finishOptions.map((opt) {
+                return DropdownMenuItem(
+                  value: opt,
+                  child: Text("${opt.name} (+₹${opt.extraPricePerUnit}/unit)", style: const TextStyle(color: Colors.white)),
+                );
+              }).toList(),
+              onChanged: (val) => setState(() => _selectedFinish = val!),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Quantity Selection Stepper
+            const Text("4. Quantity (Automatic Bulk Tier Discounts)", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                IconButton.filled(
+                  style: IconButton.filledStyleFrom(backgroundColor: const Color(0xFF333333)),
+                  icon: const Icon(Icons.remove),
+                  onPressed: () {
+                    if (_quantity > widget.product.minQuantity) {
+                      setState(() => _quantity -= 25);
+                    }
+                  },
+                ),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    margin: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E1E1E),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFD4AF37)),
+                    ),
+                    child: Center(
+                      child: Text(
+                        "$_quantity units",
+                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ),
+                IconButton.filled(
+                  style: IconButton.filledStyleFrom(backgroundColor: const Color(0xFF333333)),
+                  icon: const Icon(Icons.add),
+                  onPressed: () => setState(() => _quantity += 25),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // Artwork File Upload Section
+            const Text("5. Upload Your Artwork / Print File", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: _pickArtworkFile,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF191919),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white24, style: BorderStyle.solid),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.cloud_upload_outlined, color: Color(0xFFD4AF37)),
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Text(
+                        _uploadedFileName ?? "Upload PDF, JPG, PNG or CDR Design File",
+                        style: TextStyle(color: _uploadedFileName != null ? const Color(0xFFD4AF37) : Colors.white70),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Custom Instructions
+            const Text("6. Custom Instructions for Printing Team", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _notesController,
+              maxLines: 2,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: "E.g., Please ensure red color matches CMYK #C62828 exactly.",
+                hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
+                filled: true,
+                fillColor: const Color(0xFF1E1E1E),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+
+            const SizedBox(height: 26),
+
+            // Dynamic Price & Add to Cart Bar
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF262626),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFD4AF37)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text("Estimated Total", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      Text("₹$currentCalculatedPrice",
+                          style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 22, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFC62828),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    ),
+                    icon: const Icon(Icons.add_shopping_cart),
+                    label: const Text("Add to Cart", style: TextStyle(fontWeight: FontWeight.bold)),
+                    onPressed: () {
+                      final item = CartItem(
+                        id: DateTime.now().toIso8601String(),
+                        product: widget.product,
+                        selectedSize: _selectedSize,
+                        selectedPaper: _selectedPaper,
+                        selectedFinish: _selectedFinish,
+                        quantity: _quantity,
+                        customInstructions: _notesController.text,
+                        uploadedFileName: _uploadedFileName,
+                        calculatedTotal: currentCalculatedPrice,
+                      );
+                      context.read<AppState>().addToCart(item);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Item successfully added to Chandra Printers Cart")),
+                      );
+                      Navigator.pop(context);
+                    },
+                  )
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

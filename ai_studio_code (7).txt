@@ -1,0 +1,293 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../providers/app_state.dart';
+import '../models/models.dart';
+import 'product_config_screen.dart';
+import 'admin_dashboard_screen.dart';
+
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  static const List<String> categories = [
+    "Diaries and Notebooks",
+    "Wall Calendars",
+    "Photo Frames",
+    "Religious Books",
+    "Customized Gifts",
+    "Customized T-Shirts",
+    "Letter Boards",
+    "Visiting Cards",
+    "Wedding Cards",
+    "Banners and Flex Printing",
+    "Posters and Brochures",
+    "Customized Printing Services"
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final products = context.watch<AppState>().products;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
+              ),
+              child: const Text("CP", style: TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold, fontSize: 14)),
+            ),
+            const SizedBox(width: 10),
+            const Text("CHANDRA PRINTERS"),
+          ],
+        ),
+        actions: [
+          IconButton(
+            tooltip: "Admin Portal",
+            icon: const Icon(Icons.admin_panel_settings_outlined),
+            onPressed: () => _promptAdminLogin(context),
+          )
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top Kanpur Promotional Hero Banner
+            Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF3A0007), Color(0xFF1A1A1A)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.5), width: 1),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD4AF37),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text("KANPUR'S PREMIUM PRINT HOUSE",
+                        style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text("Offset, Flex & Premium Custom Gifts",
+                      style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  const Text("Proprietor: Dheeraj Shukla | Near Dwarikapuri Dhaal, Jawahar Nagar",
+                      style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFD4AF37),
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        onPressed: () => _launchWhatsApp("Hi Dheeraj Ji, I want to discuss a custom printing order."),
+                        icon: const Icon(Icons.chat, size: 16),
+                        label: const Text("Quick WhatsApp Quote", style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            ),
+
+            // Category Bar
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text("Product Categories",
+                  style: TextStyle(color: Color(0xFFD4AF37), fontSize: 18, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 44,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: categories.length,
+                itemBuilder: (ctx, i) => Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF222222),
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(color: const Color(0x33D4AF37)),
+                  ),
+                  child: Center(
+                    child: Text(categories[i],
+                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500)),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text("Popular Printing Solutions",
+                  style: TextStyle(color: Color(0xFFD4AF37), fontSize: 18, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 12),
+
+            // Products Grid
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: products.length,
+              itemBuilder: (ctx, idx) {
+                final product = products[idx];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  color: const Color(0xFF1B1B1B),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: const BorderSide(color: Color(0x22D4AF37)),
+                  ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ProductConfigScreen(product: product),
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.network(
+                              product.imageUrl,
+                              width: 90,
+                              height: 90,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                width: 90,
+                                height: 90,
+                                color: Colors.black26,
+                                child: const Icon(Icons.print, color: Color(0xFFD4AF37)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(product.category.toUpperCase(),
+                                    style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 10, fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 4),
+                                Text(product.name,
+                                    style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 4),
+                                Text(product.description,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(color: Colors.white60, fontSize: 12)),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text("From ₹${product.basePrice.toStringAsFixed(0)}/unit",
+                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFC62828),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Text("Configure & Order",
+                                          style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                                    )
+                                  ],
+                                )
+                              ],
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static void _launchWhatsApp(String message) async {
+    final uri = Uri.parse("https://wa.me/919415130945?text=${Uri.encodeComponent(message)}");
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  void _promptAdminLogin(BuildContext context) {
+    final pinController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text("Admin Authentication", style: TextStyle(color: Color(0xFFD4AF37))),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text("Enter 4-digit Administrator Access PIN for Chandra Printers:", style: TextStyle(color: Colors.white70)),
+            const SizedBox(height: 14),
+            TextField(
+              controller: pinController,
+              keyboardType: TextInputType.number,
+              obscureText: true,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                hintText: "Enter PIN (Default: 9415)",
+                hintStyle: TextStyle(color: Colors.grey),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFD4AF37))),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD4AF37), foregroundColor: Colors.black),
+            onPressed: () {
+              if (pinController.text == "9415") {
+                Navigator.pop(ctx);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen()));
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Unauthorized Access PIN. Access Denied.")),
+                );
+              }
+            },
+            child: const Text("Login"),
+          )
+        ],
+      ),
+    );
+  }
+}

@@ -1,0 +1,110 @@
+import 'dart:io';
+
+enum OrderStatus {
+  orderReceived,
+  orderConfirmed,
+  designProcessing,
+  printingInProgress,
+  readyForPickup,
+  outForDelivery,
+  completed,
+  cancelled
+}
+
+extension OrderStatusExtension on OrderStatus {
+  String get label {
+    switch (this) {
+      case OrderStatus.orderReceived: return "Order Received";
+      case OrderStatus.orderConfirmed: return "Order Confirmed";
+      case OrderStatus.designProcessing: return "Design Processing";
+      case OrderStatus.printingInProgress: return "Printing in Progress";
+      case OrderStatus.readyForPickup: return "Ready for Pickup";
+      case OrderStatus.outForDelivery: return "Out for Delivery";
+      case OrderStatus.completed: return "Completed";
+      case OrderStatus.cancelled: return "Cancelled";
+    }
+  }
+}
+
+class ProductOption {
+  final String name;
+  final double extraPricePerUnit;
+
+  ProductOption({required this.name, this.extraPricePerUnit = 0.0});
+}
+
+class Product {
+  final String id;
+  final String name;
+  final String category;
+  final String description;
+  final double basePrice;
+  final int minQuantity;
+  final List<String> availableSizes;
+  final List<ProductOption> paperOptions;
+  final List<ProductOption> finishOptions;
+  final String imageUrl;
+
+  Product({
+    required this.id,
+    required this.name,
+    required this.category,
+    required this.description,
+    required this.basePrice,
+    required this.minQuantity,
+    required this.availableSizes,
+    required this.paperOptions,
+    required this.finishOptions,
+    required this.imageUrl,
+  });
+}
+
+class CartItem {
+  final String id;
+  final Product product;
+  final String selectedSize;
+  final ProductOption selectedPaper;
+  final ProductOption selectedFinish;
+  final int quantity;
+  final String? customInstructions;
+  final String? uploadedFileName;
+  final double calculatedTotal;
+
+  CartItem({
+    required this.id,
+    required this.product,
+    required this.selectedSize,
+    required this.selectedPaper,
+    required this.selectedFinish,
+    required this.quantity,
+    this.customInstructions,
+    this.uploadedFileName,
+    required this.calculatedTotal,
+  });
+}
+
+class CustomerOrder {
+  final String orderId;
+  final String customerName;
+  final String customerPhone;
+  final String deliveryAddress;
+  final List<CartItem> items;
+  final double totalAmount;
+  final String paymentMethod;
+  final bool isPaid;
+  final OrderStatus status;
+  final DateTime createdAt;
+
+  CustomerOrder({
+    required this.orderId,
+    required this.customerName,
+    required this.customerPhone,
+    required this.deliveryAddress,
+    required this.items,
+    required this.totalAmount,
+    required this.paymentMethod,
+    required this.isPaid,
+    required this.status,
+    required this.createdAt,
+  });
+}
